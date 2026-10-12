@@ -251,6 +251,14 @@ function ml_tour_var_labels() {
  * Competition image re-encoded as PNG with GD (L/R logos, B banner), or null.
  */
 function ml_tour_image($TourId, $type, $maxW, $maxH) {
+	// cached for the request: a batch of emails of the same competition re-encodes each image once
+	static $cache = array();
+	$key = intval($TourId) . "|$type|$maxW|$maxH";
+	if (!array_key_exists($key, $cache)) $cache[$key] = ml_tour_image_load($TourId, $type, $maxW, $maxH);
+	return $cache[$key];
+}
+
+function ml_tour_image_load($TourId, $type, $maxW, $maxH) {
 	if (!in_array($type, array('L', 'R', 'B'), true) or !function_exists('imagecreatefromstring')) return null;
 	$r = safe_fetch(safe_r_sql("select ToImg$type as img from Tournament where ToId=" . intval($TourId)));
 	if (!$r or !strlen((string)$r->img) or !($im = @imagecreatefromstring($r->img))) return null;
@@ -429,6 +437,9 @@ function ml_flush_at_shutdown() {
 	$registered = true;
 	register_shutdown_function(function () {
 		ignore_user_abort(true);
+		// PHP writes and unlocks the session only after the shutdown functions: without this, the visitor's next
+		// request (or the admin's) would wait until every email is sent
+		if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
 		if (function_exists('fastcgi_finish_request')) {
 			fastcgi_finish_request();
 		} else {

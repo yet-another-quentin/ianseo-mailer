@@ -59,6 +59,8 @@ cd dev && IANSEO_DIR=/path/to/copy docker compose up -d --build && IANSEO_DIR=/p
 **Outbox (`MailerOutbox`, created by `ml_ensure_schema()`)**:
 - `ml_queue()` renders immediately and stores subject/text/HTML.
 - Sending happens at shutdown of the same request (`ml_flush_at_shutdown()`): with PHP-FPM after `fastcgi_finish_request()`; otherwise after flushing, which needs the caller's response to send `Content-Length`. The visitor never waits for SMTP.
+  - The session is closed first (`session_write_close()`): PHP unlocks it only after the shutdown functions, so the user's next request would otherwise wait for the emails.
+  - Competition images are re-encoded once per request (`ml_tour_image()` cache).
 - `ml_flush()` holds `GET_LOCK('mailer_flush')`. Retries: 4 tries, after 5/20/45 minutes.
 - Rows left "sending" for 15 minutes go back to the queue.
 - Further sending points: the admin page (`flush` on load) and `cron.php` (CLI only).
