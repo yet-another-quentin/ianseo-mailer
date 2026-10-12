@@ -1,0 +1,36 @@
+# Stable release: pushing a vX.Y.Z tag publishes Mailer.zip as the "latest" release.
+# Installed modules on the stable channel offer it as an update.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tests
+        run: |
+          for f in Mailer/*.php tests/*.php; do php -l "$f" >/dev/null || exit 1; done
+          php tests/core.test.php && php tests/templates.test.php
+          node --test tests/*.test.js
+
+      - name: Version from tag
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          jq --arg v "$v" '.version = $v' Mailer/version.json > version.tmp
+          mv version.tmp Mailer/version.json
+
+      - name: Archive
+        run: zip -r Mailer.zip Mailer -x '*.DS_Store'
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" Mailer.zip --title "$GITHUB_REF_NAME" --generate-notes --latest
