@@ -1,0 +1,25 @@
+# Test environment: IANSEO_DIR = a COPY of the IANSEO sources (it gets Common/config.inc.php).
+# Emails are caught by Mailpit (SMTP mailpit:1025, no security) and readable on http://localhost:8025/.
+# SELFREG_DIR (optional): the self-registration module (e.g. ../../ianseo-self-registration/SelfRegistration), whose
+#   templates then appear in the editor. MODULE_DIR (optional): another copy of Mailer, e.g. to test self-update.
+#   IANSEO_DIR=/path/to/ianseo-copy docker compose up -d --build && IANSEO_DIR=/path/to/ianseo-copy ./seed.sh  →  http://localhost:8090/
+services:
+  db:
+    image: mariadb:10.11
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: ianseo
+      MARIADB_USER: ianseo
+      MARIADB_PASSWORD: ianseo
+    command: --sql-mode=""
+  web:
+    build: .
+    depends_on: [db]
+    ports: ["8090:80"]
+    volumes:
+      - ${IANSEO_DIR:?copy of the IANSEO sources}:/var/www/html
+      - ${MODULE_DIR:-../Mailer}:/var/www/html/Modules/Custom/Mailer
+      - ${SELFREG_DIR:-./no-selfreg}:/var/www/html/Modules/Custom/SelfRegistration
+  mailpit:
+    image: axllent/mailpit:latest
+    ports: ["8025:8025"]
