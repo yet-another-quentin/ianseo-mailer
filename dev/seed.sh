@@ -1,7 +1,7 @@
 #!/bin/sh
-# Prepares the test IANSEO started by docker-compose.yml (same seed as ianseo-self-registration): schema, a French indoor competition "TEST26"
-# (4 sessions; session 1 has only 2 targets × 2 archers), fictitious licenses with birth dates, and Cloudflare's
-# Turnstile TEST keys (always pass; replace the secret with 2x0000000000000000000000000000000AA to test a failure).
+# Prepares the test IANSEO started by docker-compose.yml: schema, a French indoor competition "TEST26" with venue, logos
+# and banner (they appear in the email header), and Mailer's SMTP settings pointing to Mailpit (not tested yet: use
+# "Send a test" in Competition › Emails).
 # Usage: IANSEO_DIR=/path/to/ianseo-copy ./seed.sh   (from the dev/ folder, containers running)
 set -e
 : "${IANSEO_DIR:?copy of the IANSEO sources}"
@@ -49,28 +49,19 @@ set @t = (select max(ToId) from Tournament where ToCode='TEST26');
 update Tournament set ToIocCode='FRA', ToNumSession=4 where ToId=@t;
 delete from Session where SesTournament=@t;
 insert into Session (SesTournament,SesOrder,SesType,SesName,SesTar4Session,SesAth4Target,SesFirstTarget,SesStatus,SesDtStart,SesDtEnd,SesOdfCode,SesOdfPeriod,SesOdfVenue,SesOdfLocation,SesLocation) values
- (@t,1,'Q','Samedi matin',2,2,1,'','2026-12-12 10:00','2026-12-12 13:00','','','','',''),
+ (@t,1,'Q','Samedi matin',18,2,1,'','2026-12-12 10:00','2026-12-12 13:00','','','','',''),
  (@t,2,'Q','Samedi après-midi',18,2,1,'','2026-12-12 15:00','2026-12-12 18:00','','','','',''),
  (@t,3,'Q','Dimanche matin',18,2,1,'','2026-12-13 10:00','2026-12-13 13:00','','','','',''),
  (@t,4,'Q','Dimanche après-midi',18,2,1,'','2026-12-13 15:00','2026-12-13 18:00','','','','','');
-delete from LookUpEntries where LueIocCode='FRA' and LueCode in ('123456A','654321B','222222D','333333E','444444F','555555G','666666H');
-insert into LookUpEntries (LueCode,LueIocCode,LueFamilyName,LueName,LueSex,LueClassified,LueCtrlCode,LueCountry,LueCoDescr,LueCoShort,LueCountry2,LueCoDescr2,LueCoShort2,LueCountry3,LueCoDescr3,LueCoShort3,LueDivision,LueClass,LueSubClass,LueStatus,LueStatusValidUntil,LueDefault,LueNameOrder) values
- ('123456A','FRA','DUPONT','Jean',0,0,'1985-03-12','0333001','Archers de Cestas','ARC CESTAS','','','','','','','','','',0,'2027-08-31',1,0),
- ('654321B','FRA','MARTIN','Elodie',1,0,'2010-02-01','0333002','Archers de Pessac','ARC PESSAC','','','','','','','','','',0,'2027-08-31',1,0),
- ('222222D','FRA','ROUX','Marc',0,0,'1970-05-05','0333003','Club Z','CLUB Z','','','','','','','','','',0,'2027-08-31',1,0),
- ('333333E','FRA','LEROY','Anne',1,0,'1980-01-01','0333004','Club X','CLUB X','','','','','','','','','',0,'2027-08-31',1,0),
- ('444444F','FRA','EXPIRE','Zoé',1,0,'2000-03-12','0333004','Club X','CLUB X','','','','','','','','','',0,'2026-09-01',1,0),
- ('555555G','FRA','DURAND','Paul',0,0,'1960-01-01','0333005','Club Durand','CLUB D','','','','','','','','','',0,'2027-08-31',1,0),
- ('666666H','FRA','PETIT','Lucas',0,0,'2015-06-20','0333001','Archers de Cestas','ARC CESTAS','','','','','','','','','',0,'2027-08-31',1,0);
--- Cloudflare Turnstile test keys, stored like sr_param_set() does: serialized JSON string
-set @j = '{"site":"1x00000000000000000000AA","secret":"1x0000000000000000000000000000000AA"}';
-insert into ModulesParameters (MpModule, MpParameter, MpTournament, MpValue)
-  values ('SelfRegistration', 'turnstile', 0, concat('s:', length(@j), ':"', @j, '";'))
-  on duplicate key update MpValue=values(MpValue);
+-- Mailer SMTP settings → Mailpit, stored like ml_param_set() does: serialized JSON string
+set @j = '{"host":"mailpit","port":1025,"security":"","user":"","password":"","fromEmail":"ianseo@example.org","fromName":"IANSEO (test)","tested":""}';
+-- (insert ignore: a configuration already set in this database is kept)
+insert ignore into ModulesParameters (MpModule, MpParameter, MpTournament, MpValue)
+  values ('Mailer', 'smtp', 0, concat('s:', length(@j), ':"', @j, '";'));
 select ToId, ToCode, ToLocRule, ToIocCode from Tournament where ToId=@t;
 SQL
 
-# Competition details shown by the public form: venue and test images (left/right logos, bottom banner), drawn with GD
+# Competition details shown in the email header: venue and test images (left/right logos, bottom banner), drawn with GD
 docker compose exec -T web php -r '
 function img($w, $h, $bg, $text) {
   $im = imagecreatetruecolor($w, $h);
@@ -87,6 +78,5 @@ $st->bind_param("ssss", $venue, $l, $r, $b);
 $st->execute();
 '
 
-echo "Admin:   $URL/  (open TEST26, then Competition › Emails; SMTP: host mailpit, port 1025, security none)"
+echo "Admin:   $URL/  (open TEST26, then Competition › Emails and click « Send a test »)"
 echo "Mailpit: http://localhost:8025/"
-echo "Public form (with SELFREG_DIR): $URL/Modules/Custom/SelfRegistration/register.php?c=TEST26"

@@ -2,7 +2,7 @@
 
 [Français](#français) · English
 
-IANSEO module that sends emails on behalf of other modules: online registration acknowledgements, validations, notifications…
+IANSEO module that sends emails on behalf of other modules: acknowledgements, confirmations, notifications…
 
 - **One SMTP server for the whole installation**: your club's email host or a sending service (Brevo, Mailjet, OVH…). Set up by an IANSEO administrator.
   - **Configuration test**: a "Send a test" button sends a test email and shows the SMTP dialogue when it fails.
@@ -15,11 +15,7 @@ IANSEO module that sends emails on behalf of other modules: online registration 
 - **Outbox**: emails are sent right after the page answers, so the visitor never waits. Failures are retried automatically. The history shows each email, with view, resend and purge.
 - **For developers**: a small, versioned PHP contract (`Mailer/api.php`) and a template file per module.
 
-Templates included today: configuration test (Mailer) and, with [online self-registration](https://github.com/yet-another-quentin/ianseo-self-registration):
-- acknowledgement;
-- validation;
-- refusal;
-- notification of the organiser.
+Mailer itself only provides the configuration test template: every module that uses it brings its own templates, which appear in the editor as soon as the module is installed.
 
 ## Installation
 
@@ -78,7 +74,7 @@ PHPMailer 7.1.1 (LGPL 2.1) is included in `Mailer/vendor/phpmailer`.
 
 ## Français
 
-Module IANSEO qui envoie les emails des autres modules : accusés de réception des inscriptions en ligne, validations, notifications…
+Module IANSEO qui envoie les emails des autres modules : accusés de réception, confirmations, notifications…
 
 - **Un serveur SMTP pour toute l'installation** : messagerie du club ou service d'envoi (Brevo, Mailjet, OVH…). Réglé par un administrateur IANSEO.
   - **Test de configuration** : le bouton « Envoyer un test » envoie un email de test et affiche le dialogue SMTP en cas d'échec.
@@ -88,6 +84,7 @@ Module IANSEO qui envoie les emails des autres modules : accusés de réception 
   - personnalisables par compétition, avec aperçu en direct et variables à cliquer ;
   - bouton « Envoyer cet aperçu » et retour au modèle par défaut ;
   - emails en HTML avec les logos, le nom, les dates et le lieu de la compétition, et son bandeau du bas, plus une version texte.
+- **Modèles des autres modules** : Mailer ne fournit que le modèle de test ; chaque module qui l'utilise apporte les siens, visibles dans l'éditeur dès que le module est installé.
 - **File d'envoi** : les emails partent juste après la réponse de la page, le visiteur n'attend donc jamais. Les échecs sont réessayés automatiquement. L'historique affiche chaque email, avec consultation, renvoi et purge.
 
 ### Installation

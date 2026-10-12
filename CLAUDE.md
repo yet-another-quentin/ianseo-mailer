@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-IANSEO module (archery competition management software) that sends emails for **other modules**: SMTP settings for the whole installation, templates (French/English) that each module declares and the organiser can customise per competition, an outbox with retries, and a configuration test. Code, identifiers and comments are in English; the admin UI is translated French/English (`Mailer/i18n.js`, `ml_t()` in `lib.php`). Sister modules with the same conventions: `../ianseo-self-registration` (first user of this module), `../ianseo-entry-import`.
+IANSEO module (archery competition management software) that sends emails for **other modules**: SMTP settings for the whole installation, templates (French/English) that each module declares and the organiser can customise per competition, an outbox with retries, and a configuration test. Code, identifiers and comments are in English; the admin UI is translated French/English (`Mailer/i18n.js`, `ml_t()` in `lib.php`). Other IANSEO modules of the same author follow the same conventions (layout, releases, self-update).
 
 ## Commands
 
@@ -18,13 +18,14 @@ No local PHP? Use `docker run --rm -v "$PWD":/app -w /app php:8.2-cli php tests/
 Dev IANSEO in `dev/`:
 
 ```sh
-# IANSEO_DIR = a COPY of the IANSEO sources (seed.sh writes its Common/config.inc.php). SELFREG_DIR: optional.
-cd dev && IANSEO_DIR=/path/to/copy SELFREG_DIR=../../ianseo-self-registration/SelfRegistration docker compose up -d --build && IANSEO_DIR=/path/to/copy ./seed.sh
+# IANSEO_DIR = a COPY of the IANSEO sources (seed.sh writes its Common/config.inc.php).
+# Optional: EXTRA_MODULE_DIR=/path/to/MyModule EXTRA_MODULE_NAME=MyModule mounts a module that uses Mailer.
+cd dev && IANSEO_DIR=/path/to/copy docker compose up -d --build && IANSEO_DIR=/path/to/copy ./seed.sh
 ```
 
 - IANSEO runs on http://localhost:8090/.
 - Mailpit catches every email: SMTP `mailpit:1025`, no security, inbox on http://localhost:8025/ (its API `/api/v1/messages` is handy in tests).
-- `seed.sh` creates competition TEST26 (same seed as the self-registration module).
+- `seed.sh` creates competition TEST26 (venue, logos, banner for the email header) and points Mailer's SMTP to Mailpit (not tested: click « Send a test »).
 - Reference IANSEO sources are in `../ianseo`, read-only.
 
 ## Architecture
@@ -34,7 +35,7 @@ cd dev && IANSEO_DIR=/path/to/copy SELFREG_DIR=../../ianseo-self-registration/Se
 - Including it has no side effect.
 - Functions: `mailer_available()`, `mailer_queue($template, $TourId, $to, $vars, $opts)`, `mailer_contact()`, `mailer_default_lang()`, `mailer_format_date()`, `mailer_admin_path()`.
 - Compatibility rule: only additions (bump `MAILER_API`), never change an existing signature or meaning.
-- Callers load it as an optional dependency (`is_file(dirname(__DIR__) . '/Mailer/api.php')`). See `sr_mailer()` in the self-registration module.
+- Callers load it as an optional dependency (`is_file(dirname(__DIR__) . '/Mailer/api.php')`), see the README example.
 
 **Templates are declared by the modules themselves.**
 - Each module declares them in `<module>/mailer-templates.php`, discovered by `ml_templates()` (`glob Modules/Custom/*/mailer-templates.php`).

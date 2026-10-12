@@ -39,7 +39,7 @@ if (!defined('MAILER_API')) {
 	 * Queues an email built from a template. It is sent at the end of the current request (after the answer
 	 * reached the browser), retried later on failure. Never throws.
 	 *
-	 * @param string $template  template id, e.g. 'selfreg.received'
+	 * @param string $template  template id, e.g. 'mymod.welcome'
 	 * @param int    $TourId    competition (header, logos, competition.* variables, customised texts)
 	 * @param string $to        one email address
 	 * @param array  $vars      template variables, name => text (values are escaped in the HTML version)
