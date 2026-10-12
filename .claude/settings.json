@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "ask": [
+      "Bash(rtk git push)",
+      "Bash(rtk git push *)",
+      "Bash(git push)",
+      "Bash(git push *)"
+    ]
+  }
+}
